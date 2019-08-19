@@ -2,7 +2,18 @@
 
 const Hapi = require('@hapi/hapi');
 const Joi = require('@hapi/joi');
-const utils = require('./utils');
+const Boom = require('@hapi/boom');
+const shortid = require('shortid');
+const Mongoose = require('mongoose');
+
+Mongoose.connect('mongodb://mongo:27017/urlshortenerdb', {
+  useNewUrlParser: true,
+});
+
+const ShortUrlModel = Mongoose.model('shortUrl', {
+  shorturl: String,
+  longurl: String
+});
 
 const init = async () => {
   const server = Hapi.server({
@@ -21,42 +32,45 @@ const init = async () => {
   server.route({
     method: 'GET',
     path: '/shorten',
-    handler: (request, h) => {
+    handler: async (request, h) => {
       const params = request.query;
-      const url = params.url;
-      const allowedProtocols = ['https', 'http', 'mailto']; 
+      const longurl = params.url;
+      const allowedProtocols = ['https', 'http', 'mailto'];
       let protocolOk = false;
 
+      
       if (allowedProtocols.length > 0) {
-
         for (let i = 0; i < allowedProtocols.length - 1; i++) {
           let protocol = allowedProtocols[i];
-          if (( url.substring(0, protocol.length) ).toLowerCase() == protocol.toLowerCase()) {
+          if (
+            longurl.substring(0, protocol.length).toLowerCase() ==
+            protocol.toLowerCase()
+          ) {
             protocolOk = true;
             break;
           }
         }
-
-        if (protocolOk) {
-          // check if url is already on the db and return its short url
-
-          // generate random str
-          // const random_string = Math.random().toString(32).substring(2, 5) + Math.random().toString(32).substring(2, 5);
-          const random_string = utils.randomString();
-          console.log(random_string);
-          // store the url to db 
-          // check if mongoose has ability to save
-        } 
       } else {
-        protocolOk = true; // everything is allowed
+        protocolOk = true;
       }
 
+      if (!protocolOk) {
+        return Boom.badData('URL Protocol Validation Failed');
+      }
 
-      
+      const exists = await ShortUrlModel.findOne({ longurl });
 
-      console.log(url);
+      if (exists) {
+        return exists;
+      }
 
-      return params;
+      const shorturl = shortid.generate();
+      const data = new ShortUrlModel({
+        shorturl,
+        longurl,
+      });
+
+      return await data.save();
     },
     config: {
       validate: {
@@ -67,6 +81,20 @@ const init = async () => {
             .error(new Error('Invalid URL Provided')),
         },
       },
+    },
+  });
+
+  server.route({
+    method: 'GET',
+    path: '/{shorturl}',
+    handler: async (request, h) => {
+      const data = await ShortUrlModel.findOne({ shorturl: request.params.shorturl });
+
+      if (data) {
+        return h.redirect(data.longurl).permanent();
+      }
+
+      return 1;
     },
   });
 
