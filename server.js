@@ -5,6 +5,7 @@ const Joi = require('@hapi/joi');
 const Boom = require('@hapi/boom');
 const shortid = require('shortid');
 const Mongoose = require('mongoose');
+const Path = require('path');
 
 Mongoose.connect('mongodb://mongo:27017/urlshortenerdb', {
   useNewUrlParser: true,
@@ -12,7 +13,7 @@ Mongoose.connect('mongodb://mongo:27017/urlshortenerdb', {
 
 const ShortUrlModel = Mongoose.model('shortUrl', {
   shorturl: String,
-  longurl: String
+  longurl: String,
 });
 
 const init = async () => {
@@ -21,12 +22,18 @@ const init = async () => {
     host: '0.0.0.0',
   });
 
+  await server.register(require('inert'));
+
   server.route({
     method: 'GET',
-    path: '/',
-    handler: (request, h) => {
-      return 'Hello World!';
-    },
+    path: '/{path*}',
+    handler: {
+      directory: {
+        path: ['public'],
+        listing: true,
+        index: ['index.html']
+      }
+    }    
   });
 
   server.route({
@@ -38,7 +45,6 @@ const init = async () => {
       const allowedProtocols = ['https', 'http', 'mailto'];
       let protocolOk = false;
 
-      
       if (allowedProtocols.length > 0) {
         for (let i = 0; i < allowedProtocols.length - 1; i++) {
           let protocol = allowedProtocols[i];
@@ -86,17 +92,20 @@ const init = async () => {
 
   server.route({
     method: 'GET',
-    path: '/{shorturl}',
+    path: '/u/{shorturl}',
     handler: async (request, h) => {
-      const data = await ShortUrlModel.findOne({ shorturl: request.params.shorturl });
+      const data = await ShortUrlModel.findOne({
+        shorturl: request.params.shorturl,
+      });
 
       if (data) {
         return h.redirect(data.longurl).permanent();
       }
 
-      return 1;
+      return 'short url not found';
     },
   });
+
 
   await server.start();
   console.log('Server running on %s', server.info.uri);
