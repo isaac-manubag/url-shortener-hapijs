@@ -2,18 +2,11 @@
 
 const Hapi = require('@hapi/hapi');
 const Joi = require('@hapi/joi');
-const Boom = require('@hapi/boom');
-const shortid = require('shortid');
 const Mongoose = require('mongoose');
-const Path = require('path');
+const shortUrlController = require('./src/controllers/shortUrlController');
 
 Mongoose.connect('mongodb://mongo:27017/urlshortenerdb', {
   useNewUrlParser: true,
-});
-
-const ShortUrlModel = Mongoose.model('shortUrl', {
-  shorturl: String,
-  longurl: String,
 });
 
 const init = async () => {
@@ -31,53 +24,15 @@ const init = async () => {
       directory: {
         path: ['public'],
         listing: true,
-        index: ['index.html']
-      }
-    }    
+        index: ['index.html'],
+      },
+    },
   });
 
   server.route({
     method: 'GET',
     path: '/shorten',
-    handler: async (request, h) => {
-      const params = request.query;
-      const longurl = params.url;
-      const allowedProtocols = ['https', 'http', 'mailto'];
-      let protocolOk = false;
-
-      if (allowedProtocols.length > 0) {
-        for (let i = 0; i < allowedProtocols.length - 1; i++) {
-          let protocol = allowedProtocols[i];
-          if (
-            longurl.substring(0, protocol.length).toLowerCase() ==
-            protocol.toLowerCase()
-          ) {
-            protocolOk = true;
-            break;
-          }
-        }
-      } else {
-        protocolOk = true;
-      }
-
-      if (!protocolOk) {
-        return Boom.badData('URL Protocol Validation Failed');
-      }
-
-      const exists = await ShortUrlModel.findOne({ longurl });
-
-      if (exists) {
-        return exists;
-      }
-
-      const shorturl = shortid.generate();
-      const data = new ShortUrlModel({
-        shorturl,
-        longurl,
-      });
-
-      return await data.save();
-    },
+    handler: shortUrlController.shorten,
     config: {
       validate: {
         query: {
@@ -93,19 +48,8 @@ const init = async () => {
   server.route({
     method: 'GET',
     path: '/u/{shorturl}',
-    handler: async (request, h) => {
-      const data = await ShortUrlModel.findOne({
-        shorturl: request.params.shorturl,
-      });
-
-      if (data) {
-        return h.redirect(data.longurl).permanent();
-      }
-
-      return 'short url not found';
-    },
+    handler: shortUrlController.getShortUrl,
   });
-
 
   await server.start();
   console.log('Server running on %s', server.info.uri);
