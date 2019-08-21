@@ -16,6 +16,9 @@ const init = async () => {
   });
 
   await server.register(require('inert'));
+  await server.register({
+    plugin: require('hapi-cors'),
+  });
 
   server.route({
     method: 'GET',
