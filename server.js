@@ -2,12 +2,10 @@
 
 const Hapi = require('@hapi/hapi');
 const Joi = require('@hapi/joi');
-const Mongoose = require('mongoose');
 const shortUrlController = require('./src/controllers/shortUrlController');
+const mongo = require('./mongo');
 
-Mongoose.connect('mongodb://mongo:27017/urlshortenerdb', {
-  useNewUrlParser: true,
-});
+mongo.connect();
 
 const init = async () => {
   const server = Hapi.server({
