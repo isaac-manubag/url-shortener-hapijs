@@ -5,9 +5,11 @@ services:
     build:
       context: '.'
     environment:
-      VIRTUAL_HOST: sacly.isaacmanubag.com
-      VIRTUAL_PORT: 3000
-      WAIT_HOSTS: mongo:27017
+      - VIRTUAL_HOST=sacly.isaacmanubag.com
+      - VIRTUAL_PORT=3000
+      - LETSENCRYPT_HOST=sacly.isaacmanubag.com
+      - LETSENCRYPT_EMAIL=isaac_manubag@yahoo.com
+      - WAIT_HOSTS=mongo:27017
     expose:
       - 80
     volumes:
