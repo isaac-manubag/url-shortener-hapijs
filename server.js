@@ -31,12 +31,12 @@ const init = async () => {
   });
 
   server.route({
-    method: 'GET',
+    method: 'POST',
     path: '/shorten',
     handler: shortUrlController.shorten,
     config: {
       validate: {
-        query: {
+        payload: {
           url: Joi.string()
             .uri()
             .required()

@@ -2,8 +2,21 @@ const Boom = require('@hapi/boom');
 const shortid = require('shortid');
 const ShortUrls = require('../models/ShortUrls');
 
-exports.shorten = async (request, h) => {
-  const params = request.query;
+const validURL = str => {
+  var pattern = new RegExp(
+    '^(https?:\\/\\/)?' + // protocol
+    '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
+    '((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
+    '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
+    '(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
+      '(\\#[-a-z\\d_]*)?$',
+    'i',
+  ); // fragment locator
+  return !!pattern.test(str);
+};
+
+exports.shorten = async request => {
+  const params = request.payload;
   const longurl = params.url;
   const allowedProtocols = ['https', 'http', 'mailto'];
   let protocolOk = false;
@@ -23,7 +36,7 @@ exports.shorten = async (request, h) => {
     protocolOk = true;
   }
 
-  if (!protocolOk) {
+  if (!protocolOk || !validURL(longurl)) {
     return Boom.badData('URL Protocol Validation Failed');
   }
 
