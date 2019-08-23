@@ -11,7 +11,7 @@ services:
       - LETSENCRYPT_EMAIL=isaac_manubag@yahoo.com
       - WAIT_HOSTS=mongo:27017
     expose:
-      - 3000
+      - '${EXPOSE_PORT}'
     volumes:
       - .:/usr/src/app
     networks:
