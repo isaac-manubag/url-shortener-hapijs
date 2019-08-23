@@ -7,14 +7,13 @@ services:
     environment:
       VIRTUAL_HOST: sacly.isaacmanubag.com
       VIRTUAL_PORT: 3000
+      WAIT_HOSTS: mongo:27017
     expose:
       - 80
     volumes:
       - .:/usr/src/app
-    depends_on:
-      - mongo
-    environment:
-      WAIT_HOSTS: mongo:27017
+    networks:
+      default:
   mongo:
     container_name: mongo
     image: mongo
@@ -22,3 +21,7 @@ services:
       - ./data:/data/db
     ports:
       - '27017:27017'
+networks:
+  default:
+    external:
+      name: nginx-proxy
