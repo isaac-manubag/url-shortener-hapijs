@@ -5,8 +5,8 @@ services:
     build:
       context: '.'
     environment:
-      - VIRTUAL_HOST=sacly.isaacmanubag.com
-      - VIRTUAL_PORT=3000
+      - VIRTUAL_HOST=${V_HOST}
+      - VIRTUAL_PORT=${V_PORT}
       - LETSENCRYPT_HOST=sacly.isaacmanubag.com
       - LETSENCRYPT_EMAIL=isaac_manubag@yahoo.com
       - WAIT_HOSTS=mongo:27017
